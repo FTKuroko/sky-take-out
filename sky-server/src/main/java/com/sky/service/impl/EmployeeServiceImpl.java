@@ -4,6 +4,7 @@ import com.sky.constant.JwtClaimsConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
 import com.sky.constant.StatusConstant;
+import com.sky.context.BaseContext;
 import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.entity.Employee;
@@ -100,9 +101,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         // 设置当前记录的创建时间和修改时间
         employee.setCreateTime(LocalDateTime.now());
         employee.setUpdateTime(LocalDateTime.now());
-        // 设置当前记录创建人的 id和修改人的 id，目前写死
-        employee.setCreateUser(10L);
-        employee.setUpdateUser(10L);
+        // 设置当前记录创建人的 id和修改人的 id，从 ThreadLocal 中获取。ThreadLocal 中存储线程局部变量
+        employee.setCreateUser(BaseContext.getCurrentId());
+        employee.setUpdateUser(BaseContext.getCurrentId());
 
         employeeMapper.insert(employee);
 
