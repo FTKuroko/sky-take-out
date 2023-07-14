@@ -46,10 +46,10 @@ public class CategoryServiceImpl implements CategoryService {
         BeanUtils.copyProperties(categoryDTO, category);
         // 补全其他字段
         category.setStatus(0);
-        category.setCreateTime(LocalDateTime.now());
-        category.setCreateUser(BaseContext.getCurrentId());
-        category.setUpdateTime(LocalDateTime.now());
-        category.setUpdateUser(BaseContext.getCurrentId());
+//        category.setCreateTime(LocalDateTime.now());
+//        category.setCreateUser(BaseContext.getCurrentId());
+//        category.setUpdateTime(LocalDateTime.now());
+//        category.setUpdateUser(BaseContext.getCurrentId());
 
         categoryMapper.insert(category);
     }
@@ -115,9 +115,9 @@ public class CategoryServiceImpl implements CategoryService {
         }
         // 2. 对象拷贝
         BeanUtils.copyProperties(categoryDTO, category);
-        // 3. 更新时间和修改人字段
-        category.setUpdateUser(BaseContext.getCurrentId());
-        category.setUpdateTime(LocalDateTime.now());
+//        // 3. 更新时间和修改人字段
+//        category.setUpdateUser(BaseContext.getCurrentId());
+//        category.setUpdateTime(LocalDateTime.now());
         // 4. 更新数据库
         categoryMapper.updateById(category);
     }

@@ -21,6 +21,15 @@ mybatis:
     #开启驼峰命名
     map-underscore-to-camel-case: true
 
+mybatis-plus:
+  #mybatis-plus 配置
+  configuration:
+    # 开启驼峰命名
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+
 logging:
   level:
     com:

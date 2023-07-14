@@ -105,12 +105,12 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setStatus(StatusConstant.ENABLE);
         // 设置账号初始密码，要进行转码处理
         employee.setPassword(DigestUtils.md5DigestAsHex(PasswordConstant.DEFAULT_PASSWORD.getBytes()));
-        // 设置当前记录的创建时间和修改时间
-        employee.setCreateTime(LocalDateTime.now());
-        employee.setUpdateTime(LocalDateTime.now());
-        // 设置当前记录创建人的 id和修改人的 id，从 ThreadLocal 中获取。ThreadLocal 中存储线程局部变量
-        employee.setCreateUser(BaseContext.getCurrentId());
-        employee.setUpdateUser(BaseContext.getCurrentId());
+//        // 设置当前记录的创建时间和修改时间
+//        employee.setCreateTime(LocalDateTime.now());
+//        employee.setUpdateTime(LocalDateTime.now());
+//        // 设置当前记录创建人的 id和修改人的 id，从 ThreadLocal 中获取。ThreadLocal 中存储线程局部变量
+//        employee.setCreateUser(BaseContext.getCurrentId());
+//        employee.setUpdateUser(BaseContext.getCurrentId());
 
         employeeMapper.insert(employee);
 
@@ -174,9 +174,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         Employee employee = getById(employeeDTO.getId());
         // 2. 修改员工信息
         BeanUtils.copyProperties(employeeDTO, employee);
-        // 3. 更新修改时间和修改人 id
-        employee.setUpdateTime(LocalDateTime.now());
-        employee.setUpdateUser(BaseContext.getCurrentId());
+//        // 3. 更新修改时间和修改人 id
+//        employee.setUpdateTime(LocalDateTime.now());
+//        employee.setUpdateUser(BaseContext.getCurrentId());
         // 4. 更新数据库
         employeeMapper.updateById(employee);
     }
