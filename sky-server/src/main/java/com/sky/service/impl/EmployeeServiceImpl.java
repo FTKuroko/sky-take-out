@@ -146,10 +146,38 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void startOrStop(Integer status, Long id) {
         // 1. 先根据 id 查询员工
-        Employee employee = employeeMapper.selectById(id);
+        Employee employee = getById(id);
         // 2. 更新员工状态
         employee.setStatus(status);
         // 3. 更新员工信息
+        employeeMapper.updateById(employee);
+    }
+
+    /**
+     * 根据 id 查询员工信息
+     * @param id
+     * @return
+     */
+    @Override
+    public Employee getById(Long id) {
+        // TODO: 有个问题，id 是用 Long 来处理的，前端传递过来的 Long 型数据会丢失最后两位精度，导致查不到数据库信息，需要修改
+        return employeeMapper.selectById(id);
+    }
+
+    /**
+     * 编辑员工信息
+     * @param employeeDTO
+     */
+    @Override
+    public void update(EmployeeDTO employeeDTO) {
+        // 1. 查询员工
+        Employee employee = getById(employeeDTO.getId());
+        // 2. 修改员工信息
+        BeanUtils.copyProperties(employeeDTO, employee);
+        // 3. 更新修改时间和修改人 id
+        employee.setUpdateTime(LocalDateTime.now());
+        employee.setUpdateUser(BaseContext.getCurrentId());
+        // 4. 更新数据库
         employeeMapper.updateById(employee);
     }
 }
