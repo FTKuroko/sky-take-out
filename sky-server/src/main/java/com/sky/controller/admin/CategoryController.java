@@ -22,7 +22,7 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequestMapping("/admin/category")
-@Api(tags = "菜品分类祥光接口")
+@Api(tags = "菜品分类相关接口")
 public class CategoryController {
     @Autowired
     private CategoryService categoryService;

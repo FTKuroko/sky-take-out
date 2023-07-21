@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.JwtClaimsConstant;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.PasswordConstant;
@@ -24,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -33,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class EmployeeServiceImpl implements EmployeeService {
+public class EmployeeServiceImpl extends ServiceImpl<EmployeeMapper, Employee> implements EmployeeService {
 
     @Autowired
     private EmployeeMapper employeeMapper;
@@ -51,7 +53,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         String password = employeeLoginDTO.getPassword();
 
         //1、根据用户名查询数据库中的数据
-        Employee employee = employeeMapper.getByUsername(username);
+        LambdaQueryWrapper<Employee> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotEmpty(username), Employee::getUsername, username);
+        Employee employee = employeeMapper.selectOne(lqw);
 
         //2、处理各种异常情况（用户名不存在、密码不对、账号被锁定）
         if (employee == null) {
@@ -124,8 +128,11 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public PageResult<Employee> pageQuery(EmployeePageQueryDTO employeePageQueryDTO) {
         LambdaQueryWrapper<Employee> lqw = new LambdaQueryWrapper<>();
+        String name = employeePageQueryDTO.getName();
         // 根据输入的用户名模糊查询
-        lqw.like(StringUtils.isNotEmpty(employeePageQueryDTO.getName()), Employee::getName, employeePageQueryDTO.getName());
+        lqw.like(!(name == null || "".equals(name)), Employee::getName, employeePageQueryDTO.getName());
+        // 查询到的结果按照更新时间进行降序排序
+        lqw.orderByDesc(Employee::getUpdateTime);
         // 分页对象
         Page<Employee> page = new Page<>(employeePageQueryDTO.getPage(), employeePageQueryDTO.getPageSize());
         // 查询结果集
@@ -147,6 +154,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public void startOrStop(Integer status, Long id) {
         // 1. 先根据 id 查询员工
         Employee employee = getById(id);
+        //Employee employee = employeeMapper.selectById(id);
         // 2. 更新员工状态
         employee.setStatus(status);
         // 3. 更新员工信息
@@ -160,7 +168,6 @@ public class EmployeeServiceImpl implements EmployeeService {
      */
     @Override
     public Employee getById(Long id) {
-        // TODO: 有个问题，id 是用 Long 来处理的，前端传递过来的 Long 型数据会丢失最后两位精度，导致查不到数据库信息，需要修改
         return employeeMapper.selectById(id);
     }
 
@@ -169,6 +176,7 @@ public class EmployeeServiceImpl implements EmployeeService {
      * @param employeeDTO
      */
     @Override
+    @Transactional
     public void update(EmployeeDTO employeeDTO) {
         // 1. 查询员工
         Employee employee = getById(employeeDTO.getId());

@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.dto.CategoryDTO;
@@ -28,7 +29,7 @@ import java.util.List;
  * @date 2023/7/13 15:52
  */
 @Service
-public class CategoryServiceImpl implements CategoryService {
+public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> implements CategoryService {
     @Autowired
     private CategoryMapper categoryMapper;
     @Autowired
@@ -141,6 +142,11 @@ public class CategoryServiceImpl implements CategoryService {
      */
     @Override
     public List<Category> list(Integer type) {
-        return categoryMapper.list(type);
+        LambdaQueryWrapper<Category> lqw = new LambdaQueryWrapper<>();
+        if(type != null){
+            lqw.eq(StringUtils.isNotEmpty(String.valueOf(type)), Category::getType, type);
+        }
+        List<Category> categoryList = categoryMapper.selectList(lqw);
+        return categoryList;
     }
 }
