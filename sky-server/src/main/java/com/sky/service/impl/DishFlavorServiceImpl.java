@@ -32,4 +32,26 @@ public class DishFlavorServiceImpl extends ServiceImpl<DishFlavorMapper, DishFla
         lqw.eq(StringUtils.isNotEmpty(String.valueOf(dishId)), DishFlavor::getDishId, dishId);
         dishFlavorMapper.delete(lqw);
     }
+
+    /**
+     * 根据菜品 id 查询菜品口味数据
+     * @param dishId
+     * @return
+     */
+    @Override
+    public List<DishFlavor> getByDishId(Long dishId) {
+        LambdaQueryWrapper<DishFlavor> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotEmpty(String.valueOf(dishId)), DishFlavor::getDishId, dishId);
+        List<DishFlavor> dishFlavors = dishFlavorMapper.selectList(lqw);
+        return dishFlavors;
+    }
+
+    /**
+     * 批量插入口味信息
+     * @param flavors
+     */
+    @Override
+    public void insertBatch(List<DishFlavor> flavors) {
+        this.saveBatch(flavors);
+    }
 }

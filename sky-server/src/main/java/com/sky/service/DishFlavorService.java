@@ -16,4 +16,17 @@ public interface DishFlavorService extends IService<DishFlavor> {
      * @param dishId
      */
     void deleteByDishId(Long dishId);
+
+    /**
+     * 根据菜品 id 查询对应口味数据
+     * @param dishId
+     * @return
+     */
+    List<DishFlavor> getByDishId(Long dishId);
+
+    /**
+     * 批量插入口味信息
+     * @param flavors
+     */
+    void insertBatch(List<DishFlavor> flavors);
 }
