@@ -107,7 +107,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
      */
     @Override
     public void update(CategoryDTO categoryDTO) {
-        // TODO: 有个问题，id 是用 Long 来处理的，前端传递过来的 Long 型数据会丢失最后两位精度，导致查不到数据库信息，需要修改
         // 1. 先根据 id 查询对应的分类信息
         Long id = categoryDTO.getId();
         Category category = categoryMapper.selectById(id);

@@ -1,19 +1,30 @@
 package com.sky.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.DishDTO;
+import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
+import com.sky.entity.SetmealDish;
+import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishMapper;
+import com.sky.result.PageResult;
 import com.sky.service.DishFlavorService;
 import com.sky.service.DishService;
+import com.sky.service.SetmealDishService;
+import com.sky.vo.DishVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -30,6 +41,9 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
     @Autowired
     private DishFlavorService dishFlavorService;
+
+    @Autowired
+    private SetmealDishService setmealDishService;
 
     /**
      * 根据分类 id 查询菜品数量
@@ -80,5 +94,55 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
         lqw.eq(StringUtils.isNotEmpty(name), Dish::getName, name);
         Dish dish = dishMapper.selectOne(lqw);
         return dish;
+    }
+
+    /**
+     * 菜品信息分页查询
+     * @param dishPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult pageQuery(DishPageQueryDTO dishPageQueryDTO) {
+        // 构造分页对象
+        Page<DishVO> page = new Page<>(dishPageQueryDTO.getPage(), dishPageQueryDTO.getPageSize());
+        // 设计多表联查，需要自行编写 SQL
+        dishMapper.pageQuery(page, dishPageQueryDTO);
+        // 获取数据列表
+        List<DishVO> records = page.getRecords();
+        // 获取数据总条数
+        long total = page.getTotal();
+        return new PageResult(total, records);
+    }
+
+    /**
+     * 菜品批量删除
+     * @param ids
+     */
+    @Override
+    @Transactional
+    public void deleteBatch(List<Long> ids) {
+        /**
+         * 可以一次删除一个菜品，也可以批量删除菜品
+         * 起售中的菜品不能删除
+         * 被套餐关联的菜品不能删除
+         * 删除菜品后，关联的口味数据也需要删除掉
+         */
+        for(Long id : ids){
+            Dish dish = dishMapper.selectById(id);
+            // 判断是否还在售卖
+            if(dish.getStatus() == StatusConstant.ENABLE){
+                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
+            }
+
+            // 判断是否关联了套餐
+            List<SetmealDish> setmealDishes = setmealDishService.selectByDishId(id);
+            if(setmealDishes != null && setmealDishes.size() > 0){
+                throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
+            }
+
+            // 删除菜品以及对应的口味表中的数据
+            dishMapper.deleteById(id);
+            dishFlavorService.deleteByDishId(id);
+        }
     }
 }
