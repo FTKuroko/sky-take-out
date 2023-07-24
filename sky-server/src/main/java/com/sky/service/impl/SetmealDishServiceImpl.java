@@ -36,4 +36,33 @@ public class SetmealDishServiceImpl extends ServiceImpl<SetmealDishMapper, Setme
         List<SetmealDish> setmealDishes = setmealDishMapper.selectList(lqw);
         return setmealDishes;
     }
+
+    /**
+     * 批量插入套餐及菜品关系
+     * @param setmealDishes
+     * @return
+     */
+    @Override
+    public boolean insertBatch(List<SetmealDish> setmealDishes) {
+        return this.saveBatch(setmealDishes);
+    }
+
+    /**
+     * 根据套餐 id 进行删除
+     * @param setmealId
+     */
+    @Override
+    public void deleteBySetmealId(Long setmealId) {
+        LambdaQueryWrapper<SetmealDish> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotEmpty(String.valueOf(setmealId)), SetmealDish::getSetmealId, setmealId);
+        setmealDishMapper.delete(lqw);
+    }
+
+    @Override
+    public List<SetmealDish> selectBySetmealId(Long setmealId) {
+        LambdaQueryWrapper<SetmealDish> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotEmpty(String.valueOf(setmealId)), SetmealDish::getSetmealId, setmealId);
+        List<SetmealDish> setmealDishes = setmealDishMapper.selectList(lqw);
+        return setmealDishes;
+    }
 }

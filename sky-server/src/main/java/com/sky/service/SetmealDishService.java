@@ -17,4 +17,24 @@ public interface SetmealDishService extends IService<SetmealDish> {
      * @return
      */
     List<SetmealDish> selectByDishId(Long dishId);
+
+    /**
+     * 批量插入套餐及菜品关系
+     * @param setmealDishes
+     * @return
+     */
+    boolean insertBatch(List<SetmealDish> setmealDishes);
+
+    /**
+     * 根据套餐 id 删除对应菜品关系
+     * @param setmealId
+     */
+    void deleteBySetmealId(Long setmealId);
+
+    /**
+     * 根据套餐 id 查询套餐菜品关系
+     * @param setmealId
+     * @return
+     */
+    List<SetmealDish> selectBySetmealId(Long setmealId);
 }

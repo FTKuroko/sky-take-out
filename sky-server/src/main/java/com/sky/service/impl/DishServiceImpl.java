@@ -11,8 +11,10 @@ import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
+import com.sky.exception.BaseException;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishFlavorService;
 import com.sky.service.DishService;
@@ -44,6 +46,9 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
     @Autowired
     private SetmealDishService setmealDishService;
+
+    @Autowired
+    private SetmealMapper setmealMapper;
 
     /**
      * 根据分类 id 查询菜品数量
@@ -183,5 +188,49 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             });
             dishFlavorService.insertBatch(flavors);
         }
+    }
+
+    /**
+     * 根据分类 id 查询菜品
+     * @param categoryId
+     * @return
+     */
+    @Override
+    public List<Dish> listByCategoryId(Long categoryId) {
+        LambdaQueryWrapper<Dish> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotEmpty(String.valueOf(categoryId)), Dish::getCategoryId, categoryId);
+        lqw.eq(Dish::getStatus, StatusConstant.ENABLE);
+        lqw.orderByDesc(Dish::getCreateTime);
+        List<Dish> dishes = dishMapper.selectList(lqw);
+        return dishes;
+    }
+
+    /**
+     * 起售停售菜品
+     * @param status
+     * @param id
+     */
+    @Override
+    public void startOrStop(Integer status, Long id) {
+        // 与正在起售的套餐相关联的菜品不能停售
+        if(status == StatusConstant.DISABLE){
+            List<SetmealDish> setmealDishes = setmealDishService.selectByDishId(id);
+            if(setmealDishes != null && setmealDishes.size() > 0){
+                setmealDishes.forEach(setmealDish -> {
+                    // 套餐 id
+                    Long setmealId = setmealDish.getSetmealId();
+                    // 获取套餐信息
+                    Setmeal setmeal = setmealMapper.selectById(setmealId);
+                    // 判断套餐状态
+                    if(setmeal.getStatus() == StatusConstant.ENABLE){
+                        throw new BaseException("有关联套餐正在售卖，不能停售！");
+                    }
+                });
+            }
+        }
+        // 修改状态
+        Dish dish = dishMapper.selectById(id);
+        dish.setStatus(status);
+        dishMapper.updateById(dish);
     }
 }
