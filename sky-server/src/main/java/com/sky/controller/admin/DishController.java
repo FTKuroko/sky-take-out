@@ -111,7 +111,7 @@ public class DishController {
      * @param id
      * @return
      */
-    @GetMapping("/status/{status}")
+    @PostMapping("/status/{status}")
     @ApiOperation("起售停售菜品")
     public Result startOrStop(@PathVariable Integer status, Long id){
         log.info("起售停售菜品:{}, {}", status, id);
