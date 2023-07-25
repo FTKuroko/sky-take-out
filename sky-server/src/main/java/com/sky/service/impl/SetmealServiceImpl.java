@@ -19,6 +19,7 @@ import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.service.SetmealDishService;
 import com.sky.service.SetmealService;
+import com.sky.vo.DishItemVO;
 import com.sky.vo.SetmealVO;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -184,6 +185,37 @@ public class SetmealServiceImpl extends ServiceImpl<SetmealMapper, Setmeal> impl
         Setmeal setmeal = setmealMapper.selectById(id);
         setmeal.setStatus(status);
         setmealMapper.updateById(setmeal);
+    }
+
+    /**
+     * 根据套餐 id 查询菜品部分信息
+     * @param id
+     * @return
+     */
+    @Override
+    public List<DishItemVO> getDishItemById(Long id) {
+        List<DishItemVO> dishItem = setmealMapper.getDishItemBySetmealId(id);
+        return dishItem;
+    }
+
+    /**
+     * 动态查询套餐列表
+     * @param setmeal
+     * @return
+     */
+    public List<Setmeal> list(Setmeal setmeal){
+        LambdaQueryWrapper<Setmeal> lqw = new LambdaQueryWrapper<>();
+        // 分类 id
+        Long categoryId = setmeal.getCategoryId();
+        // 套餐名称(模糊查询)
+        String name = setmeal.getName();
+        // 套餐状态
+        Integer status = setmeal.getStatus();
+        lqw.eq(StringUtils.isNotEmpty(String.valueOf(categoryId)), Setmeal::getCategoryId, categoryId);
+        lqw.like(StringUtils.isNotEmpty(name), Setmeal::getName, name);
+        lqw.eq(StringUtils.isNotEmpty(String.valueOf(status)), Setmeal::getStatus, StatusConstant.ENABLE);
+        List<Setmeal> setmeals = setmealMapper.selectList(lqw);
+        return setmeals;
     }
 
 
