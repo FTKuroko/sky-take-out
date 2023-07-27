@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,11 +38,10 @@ public class DishController {
     @ApiOperation("根据分类 id 查询菜品")
     public Result<List<DishVO>> list(Long categoryId){
         Dish dish = new Dish();
-        dish.setCategoryId(categoryId);
-        // 只查询起售中的菜品
+        // 只查询在售卖的菜品
         dish.setStatus(StatusConstant.ENABLE);
-
-        List<DishVO> dishVOS = dishService.listWithFlavor(dish);
-        return Result.success(dishVOS);
+        dish.setCategoryId(categoryId);
+        List<DishVO> dishVOList = dishService.listCache(dish);
+        return Result.success(dishVOList);
     }
 }

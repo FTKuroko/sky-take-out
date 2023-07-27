@@ -3,6 +3,9 @@ package com.sky.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sky.constant.MessageConstant;
 import com.sky.constant.StatusConstant;
 import com.sky.dto.DishDTO;
@@ -24,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -50,6 +54,12 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
     @Autowired
     private SetmealMapper setmealMapper;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * 根据分类 id 查询菜品数量
@@ -254,11 +264,45 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             dishes.forEach(dish1 -> {
                 DishVO dishVO = new DishVO();
                 // 查询菜品对应口味
-                List<DishFlavor> flavors = dishFlavorService.getByDishId(dish.getId());
-                BeanUtils.copyProperties(dish, dishVO);
+                List<DishFlavor> flavors = dishFlavorService.getByDishId(dish1.getId());
+                BeanUtils.copyProperties(dish1, dishVO);
                 dishVO.setFlavors(flavors);
                 dishVOList.add(dishVO);
             });
+        }
+        return dishVOList;
+    }
+
+    /**
+     * 动态查询菜品信息，含有 redis 缓存
+     * @param dish
+     * @return
+     */
+    @Override
+    public List<DishVO> listCache(Dish dish) {
+        // 创建 key
+        Long categoryId = dish.getCategoryId();
+        String key = "dish_" + categoryId;
+        // 查询缓存
+        String json = stringRedisTemplate.opsForValue().get(key);
+        // 缓存命中
+        if(json != null){
+            // json 转列表对象
+            try {
+                List<DishVO> dishVOList = objectMapper.readValue(json, new TypeReference<List<DishVO>>() {
+                });
+                return dishVOList;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // 缓存未命中，查询数据库
+        List<DishVO> dishVOList = listWithFlavor(dish);
+        // 列表对象转 json，存入 redis
+        try {
+            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(dishVOList));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
         return dishVOList;
     }

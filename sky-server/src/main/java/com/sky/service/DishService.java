@@ -75,4 +75,11 @@ public interface DishService extends IService<Dish> {
      * @return
      */
     List<DishVO> listWithFlavor(Dish dish);
+
+    /**
+     * 动态查询菜品信息，含有 redis 缓存
+     * @param dish
+     * @return
+     */
+    List<DishVO> listCache(Dish dish);
 }
