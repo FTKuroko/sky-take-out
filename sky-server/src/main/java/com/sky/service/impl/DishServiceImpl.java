@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Kuroko
@@ -98,6 +99,12 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
             dishFlavorService.saveBatch(flavors);
         }
+
+        // 新增菜品后会导致缓存中的菜品数据与数据库中的菜品数据不一致，因此考虑在新增菜品时先将缓存清空，之后查询数据库时再写入缓存
+        Long categoryId = dish.getCategoryId();
+        // 清理缓存数据
+        String key = "dish_" + categoryId;
+        cleanCache(key);
     }
 
     /**
@@ -160,6 +167,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             dishMapper.deleteById(id);
             dishFlavorService.deleteByDishId(id);
         }
+
+        // 删除菜品也会导致缓存中的数据和数据库不一致，因此考虑先删除缓存。
+        // 只有用户端查询的菜品数据写入缓存，因为管理端访问不会太频繁，并且数据是按照分类存入缓存的。管理端在删除菜品时，可能会删除多个分类下的菜品，简单起见用户端缓存中直接把所有菜品数据清空
+        cleanCache("dish_*");
     }
 
     /**
@@ -199,6 +210,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             });
             dishFlavorService.insertBatch(flavors);
         }
+
+        // 修改菜品信息也会导致缓存与数据库不一致，考虑先删除缓存
+        Long categoryId = dish.getCategoryId();
+        cleanCache("dish_" + categoryId);
     }
 
     /**
@@ -243,6 +258,10 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
         Dish dish = dishMapper.selectById(id);
         dish.setStatus(status);
         dishMapper.updateById(dish);
+
+        // 起售停售也会导致缓存与数据库不一致，考虑先删除缓存
+        Long categoryId = dish.getCategoryId();
+        cleanCache("dish_" + categoryId);
     }
 
     /**
@@ -305,5 +324,14 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
             throw new RuntimeException(e);
         }
         return dishVOList;
+    }
+
+    /**
+     * 清除缓存菜品数据
+     * @param pattern
+     */
+    private void cleanCache(String pattern){
+        Set<String> keys = stringRedisTemplate.keys(pattern);
+        stringRedisTemplate.delete(keys);
     }
 }
