@@ -1,27 +1,28 @@
 package com.sky.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
+import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
-import com.sky.entity.AddressBook;
-import com.sky.entity.OrderDetail;
-import com.sky.entity.Orders;
-import com.sky.entity.ShoppingCart;
+import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
+import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.OrdersMapper;
-import com.sky.service.AddressBookService;
-import com.sky.service.OrderDetailService;
-import com.sky.service.OrdersService;
-import com.sky.service.ShoppingCartService;
+import com.sky.service.*;
+import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +46,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
     @Autowired
     private AddressBookService addressBookService;
+
+    @Autowired
+    private UserService userService;
 
     @Override
     @Transactional
@@ -106,4 +110,66 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         return orderSubmitVO;
     }
+
+    /**
+     * 根据订单号和用户 id 查询订单
+     * @param orderNumber
+     * @return
+     */
+    @Override
+    public Orders getOrdersByNumber(String orderNumber) {
+        LambdaQueryWrapper<Orders> lqw = new LambdaQueryWrapper<>();
+        lqw.eq(StringUtils.isNotEmpty(orderNumber), Orders::getNumber, orderNumber);
+        Orders orders = ordersMapper.selectOne(lqw);
+        return orders;
+    }
+
+    /**
+     * 订单支付
+     * @param ordersPaymentDTO
+     * @return
+     */
+    @Override
+    public OrderPaymentVO payment(OrdersPaymentDTO ordersPaymentDTO) {
+        // 获取当前用户
+        Long userId = BaseContext.getCurrentId();
+        User user = userService.getById(userId);
+//        //调用微信支付接口，生成预支付交易单。需要企业用户开通服务才行，目前实现不了，看看大概就行
+//        JSONObject jsonObject = weChatPayUtil.pay(
+//                ordersPaymentDTO.getOrderNumber(), //商户订单号
+//                new BigDecimal(0.01), //支付金额，单位 元
+//                "苍穹外卖订单", //商品描述
+//                user.getOpenid() //微信用户的openid
+//        );
+
+        // 模拟订单支付
+        JSONObject jsonObject = new JSONObject();
+        if(jsonObject.getString("code") != null && jsonObject.getString("code").equals("ORDERPAID")){
+            throw new OrderBusinessException("该订单已支付");
+        }
+
+        // 封装返回数据
+        OrderPaymentVO orderPaymentVO = jsonObject.toJavaObject(OrderPaymentVO.class);
+        orderPaymentVO.setPackageStr(jsonObject.getString("package"));
+        paySuccess(ordersPaymentDTO.getOrderNumber());
+        return orderPaymentVO;
+    }
+
+    /**
+     * 支付成功，修改订单状态
+     * @param outTradeNo
+     */
+    @Override
+    public void paySuccess(String outTradeNo) {
+        // 根据订单号查询订单信息
+        Orders order = getOrdersByNumber(outTradeNo);
+        // 修改订单状态
+        order.setStatus(Orders.TO_BE_CONFIRMED);
+        order.setPayStatus(Orders.PAID);
+        order.setCheckoutTime(LocalDateTime.now());
+
+        ordersMapper.updateById(order);
+    }
+
+
 }
