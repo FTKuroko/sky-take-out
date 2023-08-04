@@ -65,6 +65,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         Integer validOrderCount = ordersMapper.selectCount(lqw1);   // 有效订单数
         LocalDate date = end.toLocalDate();
         Double turnover = ordersMapper.sumAmountInOneDay(Orders.COMPLETED, date);   // 当天总金额
+        turnover = turnover == null ? 0.0 : turnover;
         Double unitPrice = 0.0; // 平均单价
         Double orderCompletionRate = 0.0;   // 订单完成率
         if(totalOrderCount != 0 && validOrderCount != 0){
